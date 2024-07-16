@@ -2,6 +2,8 @@
 
 import { Custom } from "@/types";
 import { useRef, useState } from "react";
+import Label from "./Label";
+import { hover } from "./css-function";
 
 const Scraper = () => {
   const urlRef = useRef<HTMLInputElement>(null);
@@ -12,19 +14,22 @@ const Scraper = () => {
 
   const [data, setData] = useState<string[]>([]);
 
+  const [select] = useState(hover("border", "border-yellow-500"));
+  const [btn] = useState(hover("font-normal", "shadow-none"));
+
   const main = async () => {
     if (
       urlRef.current?.value === "" ||
       selectorRef.current?.value === "" ||
       fileNameRef.current?.value === "" ||
-      // fileTypeRef?.value === "" ||
       !downloadRef.current
     )
       throw new Error();
 
     if (
       fileTypeRef.current!.value !== "txt" &&
-      fileTypeRef.current!.value !== "json"
+      fileTypeRef.current!.value !== "json" &&
+      fileTypeRef.current!.value !== "csv"
     )
       throw new Error();
 
@@ -42,8 +47,11 @@ const Scraper = () => {
     });
 
     const datas: string[] = await res.json();
-
-    const blob = new Blob(datas);
+    const jsonData = JSON.stringify(datas);
+    const blob =
+      fileTypeRef.current!.value === "csv"
+        ? new Blob([jsonData], { type: "text/csv" })
+        : new Blob([jsonData], { type: "text/json" });
 
     const objUrl = window.URL.createObjectURL(blob);
 
@@ -59,35 +67,43 @@ const Scraper = () => {
   };
 
   return (
-    <div id='app'>
-      <div id='form'>
+    <div id='app' className='flex flex-col justify-center items-center'>
+      <div id='form' className='flex flex-col justify-center items-center m-3'>
         <div>
-          <label>URL：</label>
-          <input type='text' id='url' ref={urlRef} />
+          <Label>URL：</Label>
+          {/* <Input placeholder='Enter URL' ref={urlRef} /> */}
+          <input placeholder='Enter URL' ref={urlRef} />
         </div>
         <div>
-          <label>セレクタ：</label>
-          <input type='text' id='selector' ref={selectorRef} />
+          <Label>セレクタ：</Label>
+          {/* <Input placeholder='Enter HTML selector' ref={selectorRef} /> */}
+          <input placeholder='Enter HTML selector' ref={selectorRef} />
         </div>
         <div>
-          <label>保存先のファイル名：</label>
-          <input type='text' id='fileName' ref={fileNameRef} />
-
-          <select name='filetype' id='filetype' ref={fileTypeRef}>
+          <Label>保存先のファイル名：</Label>
+          {/* <Input placeholder='Download the retrieved data' ref={fileNameRef} /> */}
+          <input placeholder='Download the retrieved data' ref={fileNameRef} />
+          <select
+            name='filetype'
+            id='filetype'
+            ref={fileTypeRef}
+            className={`text-xl p-1 m-2 ${select}`}>
             <option value='txt'>txt</option>
             <option value='json'>json</option>
+            <option value='csv'>csv</option>
           </select>
+          <span className='text-gray-300 m-2 px-1'>← Data Type</span>
         </div>
-        <button id='exe' onClick={async () => await main()}>
+        <button
+          className={`text-xl ${btn} font-semibold p-2 px-8 m-3 shadow bg-sky-200`}
+          onClick={async () => await main()}>
           実行
         </button>
       </div>
-      <div id='selectorList'>{JSON.stringify(data)}</div>
-      <div className=''>
-        <a id='downloadLink' ref={downloadRef}>
-          Download
-        </a>
-      </div>
+      <div>{JSON.stringify(data)}</div>
+      <a ref={downloadRef} className='text-2xl text-blue-500'>
+        Download
+      </a>
     </div>
   );
 };
